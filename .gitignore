@@ -2,7 +2,8 @@
 node_modules
 /dist
 
-
+public*
+node_modules*
 # local env files
 .env.local
 .env.*.local
