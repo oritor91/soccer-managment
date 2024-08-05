@@ -14,17 +14,18 @@
             label="Phone Number"
             required
           ></v-text-field>
-          <v-text-field
+          <v-select
             v-model="player.position"
+            :items="positions"
             label="Position"
             required
-          ></v-text-field>
-          <v-text-field
+          ></v-select>
+          <v-select
             v-model="player.skill_level"
+            :items="skillLevels"
             label="Skill Level"
-            type="number"
             required
-          ></v-text-field>
+          ></v-select>
           <v-btn type="submit" color="primary">Add Player</v-btn>
           <v-btn type="button" color="secondary" @click="cancelForm">Cancel</v-btn>
         </v-form>
@@ -36,6 +37,8 @@
 <script>
 import { ref } from 'vue';
 import axios from 'axios';
+import { PLAYER_POSITIONS, PLAYER_SKILL_LEVEL } from '@/consts';
+
 
 export default {
   setup(props, { emit }) {
@@ -45,6 +48,9 @@ export default {
       position: '',
       skill_level: 0,
     });
+
+    const positions = ref(PLAYER_POSITIONS);
+    const skillLevels = ref(PLAYER_SKILL_LEVEL);
 
     const addPlayer = async () => {
       try {
@@ -74,6 +80,8 @@ export default {
       player,
       addPlayer,
       resetForm,
+      positions,
+      skillLevels,
       cancelForm,
     };
   },

@@ -37,15 +37,15 @@
         <div v-if="sortedGroups">
           <h3>Group 1</h3>
           <ul>
-            <li v-for="player in sortedGroups.group_a" :key="player.name">{{ player.name }} - {{ player.skill_level }}</li>
+            <li v-for="player in sortedGroups.group_a" :key="player.name">{{ player.name }} - {{player.position}} - {{ player.skill_level }}</li>
           </ul>
           <h3>Group 2</h3>
           <ul>
-            <li v-for="player in sortedGroups.group_b" :key="player.name">{{ player.name }} - {{ player.skill_level }}</li>
+            <li v-for="player in sortedGroups.group_b" :key="player.name">{{ player.name }} - {{player.position}} - {{ player.skill_level }}</li>
           </ul>
           <h3>Group 3</h3>
           <ul>
-            <li v-for="player in sortedGroups.group_c" :key="player.name">{{ player.name }} - {{ player.skill_level }}</li>
+            <li v-for="player in sortedGroups.group_c" :key="player.name">{{ player.name }} - {{player.position}} - {{ player.skill_level }}</li>
           </ul>
         </div>
       </v-card-text>
@@ -123,7 +123,6 @@ export default {
         const game_id = `${props.selectedGame.date}_${props.selectedGame.time}`;
         const response = await axios.post(`http://localhost:8000/games/${game_id}/sort-groups`);
         sortedGroups.value = response.data;
-        console.log(sortedGroups.value.group_a);
       } catch (error) {
         console.error('Failed to sort players into groups:', error);
       }
