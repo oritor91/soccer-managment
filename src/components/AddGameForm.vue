@@ -54,7 +54,7 @@ export default {
 
     const fetchPlayers = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/players');
+        const response = await axios.get('http://localhost:8000/player');
         players.value = response.data;
         console.log('Fetched players:', players.value);
       } catch (error) {

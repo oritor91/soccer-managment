@@ -121,7 +121,7 @@ export default {
     const sortPlayersIntoGroups = async () => {
       try {
         const game_id = `${props.selectedGame.date}_${props.selectedGame.time}`;
-        const response = await axios.post(`http://localhost:8000/games/${game_id}/sort-groups`);
+        const response = await axios.post(`http://localhost:8000/game/${game_id}/sort-groups`);
         sortedGroups.value = response.data;
       } catch (error) {
         console.error('Failed to sort players into groups:', error);
