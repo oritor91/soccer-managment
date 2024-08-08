@@ -1,9 +1,9 @@
 <template>
   <v-container>
-    <v-card>
+    <v-card class="my-4">
       <v-card-title>Edit Game</v-card-title>
       <v-card-text>
-        <v-form @submit.prevent="updateGame">
+        <v-form @submit.prevent="updateCurrentGame">
           <v-text-field
             v-model="game.date"
             label="Date"
@@ -22,32 +22,62 @@
             required
           ></v-text-field>
           <v-select
+            v-model="selectedPlayers"
             label="Select Players"
             :items="players"
             item-title="name"
             item-value="name"
             multiple
+            chips
             @update:modelValue="updateSelectedPlayers"
           ></v-select>
           <v-btn type="submit" color="primary">Update Game</v-btn>
-          <v-btn type="button" color="error" @click="deleteGame">Delete Game</v-btn>
+          <v-btn type="button" color="error" @click="deleteCurrentGame">Delete Game</v-btn>
           <v-btn type="button" color="secondary" @click="closeForm">Cancel</v-btn>
-          <v-btn type="button" color="success" @click="sortPlayersIntoGroups">Sort into Groups</v-btn>
+          <v-btn type="button" color="success" @click="sortGroups">Sort into Groups</v-btn>
+          <v-btn type="button" color="success" @click="saveGroups" v-if="sortedGroups">Save Groups</v-btn>
         </v-form>
-        <div v-if="sortedGroups">
-          <h3>Group 1</h3>
-          <ul>
-            <li v-for="player in sortedGroups.group_a" :key="player.name">{{ player.name }} - {{player.position}} - {{ player.skill_level }}</li>
-          </ul>
-          <h3>Group 2</h3>
-          <ul>
-            <li v-for="player in sortedGroups.group_b" :key="player.name">{{ player.name }} - {{player.position}} - {{ player.skill_level }}</li>
-          </ul>
-          <h3>Group 3</h3>
-          <ul>
-            <li v-for="player in sortedGroups.group_c" :key="player.name">{{ player.name }} - {{player.position}} - {{ player.skill_level }}</li>
-          </ul>
-        </div>
+        <v-row v-if="sortedGroups" class="mt-4">
+          <v-col cols="12" md="4">
+            <v-card outlined>
+              <v-card-title>Group 1</v-card-title>
+              <v-card-text>
+                <v-list>
+                  <v-list-item v-for="player in sortedGroups.group_a" :key="player.name">
+                    <v-list-item-title>{{ player.name }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ player.position }} - Skill Level: {{ player.skill_level }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card outlined>
+              <v-card-title>Group 2</v-card-title>
+              <v-card-text>
+                <v-list>
+                  <v-list-item v-for="player in sortedGroups.group_b" :key="player.name">
+                    <v-list-item-title>{{ player.name }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ player.position }} - Skill Level: {{ player.skill_level }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card outlined>
+              <v-card-title>Group 3</v-card-title>
+              <v-card-text>
+                <v-list>
+                  <v-list-item v-for="player in sortedGroups.group_c" :key="player.name">
+                    <v-list-item-title>{{ player.name }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ player.position }} - Skill Level: {{ player.skill_level }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
   </v-container>
@@ -55,7 +85,7 @@
 
 <script>
 import { ref, watch, onMounted } from 'vue';
-import axios from 'axios';
+import {updateGame, deleteGame, sortPlayersIntoGroups, saveSortedGroups, fetchPlayers} from '@/api';
 
 export default {
   props: {
@@ -68,35 +98,31 @@ export default {
       time: '',
       location: '',
       players: [],
+      sortedGroups: {}, // Add sortedGroups to the game object
     });
 
     const players = ref([]);
     const selectedPlayers = ref([]);
     const sortedGroups = ref(null);
 
-    const fetchPlayers = async () => {
+    const loadPlayers = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/players');
-        players.value = response.data;
+        const response = await fetchPlayers();
+        players.value = response;
       } catch (error) {
         console.error('Error fetching players:', error);
       }
     };
 
     const updateSelectedPlayers = (selectedNames) => {
-      game.value.players = selectedNames.map(name =>
+      game.value.players = selectedNames.map(name => 
         players.value.find(player => player.name === name)
       );
     };
 
-    const updateGame = async () => {
+    const updateCurrentGame = async () => {
       try {
-        console.log(game.value);
-        await axios.request({
-          url: 'http://localhost:8000/game',
-          method: 'put',
-          data: game.value
-        });
+        await updateGame(game);
         emit('save');
         closeForm();
       } catch (error) {
@@ -104,13 +130,10 @@ export default {
       }
     };
 
-    const deleteGame = async () => {
+    const deleteCurrentGame = async () => {
       try {
-        await axios.request({
-          url: 'http://localhost:8000/game',
-          method: 'delete',
-          data: props.selectedGame
-        });
+        console.log(game);
+        await deleteGame(game);
         emit('save');
         closeForm();
       } catch (error) {
@@ -118,13 +141,23 @@ export default {
       }
     };
 
-    const sortPlayersIntoGroups = async () => {
+    const sortGroups = async () => {
       try {
-        const game_id = `${props.selectedGame.date}_${props.selectedGame.time}`;
-        const response = await axios.post(`http://localhost:8000/game/${game_id}/sort-groups`);
-        sortedGroups.value = response.data;
+        const response = await sortPlayersIntoGroups(game);
+        sortedGroups.value = response;
+        game.value.sortedGroups = response.data; // Save sortedGroups to game object
       } catch (error) {
         console.error('Failed to sort players into groups:', error);
+      }
+    };
+
+    const saveGroups = async () => {
+      try {
+        await saveSortedGroups(game, sortedGroups);
+        emit('save');
+        closeForm();
+      } catch (error) {
+        console.error('Failed to save sorted groups:', error);
       }
     };
 
@@ -132,17 +165,17 @@ export default {
       emit('close');
     };
 
-    // Watch for changes in selectedGame prop and update local game state
     watch(() => props.selectedGame, (newGame) => {
       if (newGame) {
-        console.log("Props updated:", newGame); // Debugging: Ensure this is logged
+        console.log('Selected game:', newGame);
         game.value = { ...newGame };
         selectedPlayers.value = newGame.players ? newGame.players.map(player => player.name) : [];
+        sortedGroups.value = newGame.sorted_groups || null;
       }
     }, { immediate: true });
 
     onMounted(() => {
-      fetchPlayers();
+      loadPlayers();
     });
 
     return {
@@ -150,9 +183,10 @@ export default {
       players,
       selectedPlayers,
       sortedGroups,
-      updateGame,
-      deleteGame,
-      sortPlayersIntoGroups,
+      updateCurrentGame,
+      deleteCurrentGame,
+      sortGroups,
+      saveGroups,
       closeForm,
       updateSelectedPlayers,
     };

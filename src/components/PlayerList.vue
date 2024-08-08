@@ -1,27 +1,55 @@
 <template>
   <v-container>
-    <v-card>
-      <v-card-title>Players</v-card-title>
+    <v-card class="my-4">
+      <v-card-title>
+        <v-row align="center">
+          <v-col>Players</v-col>
+          <v-col class="text-right">
+            <v-btn @click="isAddPlayerFormVisible = true" color="primary">
+              <v-icon left>mdi-plus</v-icon> Add Player
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-title>
       <v-card-text>
-        <v-btn @click="isAddPlayerFormVisible = true" color="primary">Add Player</v-btn>
-        <v-list>
-          <v-list-item v-for="player in players" :key="player.id">
-            <v-list-item-content>
-              <v-list-item-title>{{ player.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ player.position }} - Skill Level: {{ player.skill_level }}</v-list-item-subtitle>
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-btn icon @click="editPlayer(player)" color="black">
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn icon @click="deletePlayer(player)">
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-        </v-list>
-        <AddPlayerForm v-if="isAddPlayerFormVisible" @save="fetchPlayers" @cancel="isAddPlayerFormVisible = false" />
-        <EditPlayerForm v-if="isEditPlayerFormVisible" :player="currentPlayer" @save="fetchPlayers" @close="closeEditForm" />
+        <v-dialog v-model="isAddPlayerFormVisible" max-width="600px">
+          <v-card>
+            <v-card-title>Add Player</v-card-title>
+            <v-card-text>
+              <AddPlayerForm @save="loadPlayers" @cancel="isAddPlayerFormVisible = false" @close="closeEditForm" />
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+
+        <v-row>
+          <v-col v-for="player in players" :key="player.id" cols="12" md="6">
+            <v-card class="my-2" outlined>
+              <v-card-title>
+                <v-row>
+                  <v-col>{{ player.name }}</v-col>
+                  <v-col class="text-right">
+                    <v-btn icon @click="editPlayer(player)" color="black">
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
+                    <v-btn icon @click="removePlayer(player)" color="error">
+                      <v-icon>mdi-delete</v-icon>
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-card-title>
+              <v-card-subtitle>{{ player.position }} - Skill Level: {{ player.skill_level }}</v-card-subtitle>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <v-dialog v-model="isEditPlayerFormVisible" max-width="600px">
+          <v-card>
+            <v-card-title>Edit Player</v-card-title>
+            <v-card-text>
+              <EditPlayerForm :player="currentPlayer" @save="loadPlayers" @close="closeEditForm" />
+            </v-card-text>
+          </v-card>
+        </v-dialog>
       </v-card-text>
     </v-card>
   </v-container>
@@ -29,7 +57,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { fetchPlayers, deletePlayer } from '@/api';
 import AddPlayerForm from './AddPlayerForm.vue';
 import EditPlayerForm from './EditPlayerForm.vue';
 
@@ -41,12 +69,11 @@ export default {
     const isEditPlayerFormVisible = ref(false);
     const currentPlayer = ref(null);
 
-    const fetchPlayers = async () => {
+    const loadPlayers = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/player');
-        players.value = response.data;
+        players.value = await fetchPlayers();
       } catch (error) {
-        console.error('Error fetching players:', error);
+        console.error('Error loading players:', error);
       }
     };
 
@@ -55,14 +82,10 @@ export default {
       isEditPlayerFormVisible.value = true;
     };
 
-    const deletePlayer = async (player) => {
+    const removePlayer = async (player) => {
       try {
-        await axios.request({
-          url: 'http://localhost:8000/player',
-          method: 'delete',
-          data: player
-        });
-        fetchPlayers();
+        await deletePlayer(player);
+        await loadPlayers();
       } catch (error) {
         console.error('Error deleting player:', error);
       }
@@ -72,16 +95,16 @@ export default {
       isEditPlayerFormVisible.value = false;
     };
 
-    onMounted(fetchPlayers);
+    onMounted(loadPlayers);
 
     return {
       players,
       isAddPlayerFormVisible,
       isEditPlayerFormVisible,
       currentPlayer,
-      fetchPlayers,
+      loadPlayers,
       editPlayer,
-      deletePlayer,
+      removePlayer,
       closeEditForm,
     };
   },

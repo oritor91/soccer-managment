@@ -3,7 +3,7 @@
     <v-card>
       <v-card-title>Edit Player</v-card-title>
       <v-card-text>
-        <v-form @submit.prevent="updatePlayer">
+        <v-form @submit.prevent="updateCurrentPlayer">
           <v-text-field
             v-model="playerData.name"
             label="Name"
@@ -36,7 +36,7 @@
 
 <script>
 import { ref, watch } from 'vue';
-import axios from 'axios';
+import { updatePlayer } from '@/api';
 import { PLAYER_POSITIONS, PLAYER_SKILL_LEVEL } from '@/consts';
 
 export default {
@@ -56,17 +56,13 @@ export default {
       }
     );
 
-    const updatePlayer = async () => {
+    const updateCurrentPlayer = async () => {
       try {
         const requestData = {
           old: oldPlayerData.value,
           new: playerData.value,
         };
-        await axios.request({
-          url: 'http://localhost:8000/player',
-          method: 'put',
-          data: requestData,
-        });
+        await updatePlayer(requestData);
         emit('save');
         closeForm();
       } catch (error) {
@@ -80,7 +76,7 @@ export default {
 
     return {
       playerData,
-      updatePlayer,
+      updateCurrentPlayer,
       positions,
       skillLevels,
       closeForm,

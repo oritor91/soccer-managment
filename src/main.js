@@ -4,6 +4,7 @@ import App from './App.vue';
 import router from './router';
 import vuetify from './plugins/vuetify';
 import 'vuetify/styles';
+import './assets/styles.css';
 
 if (process.env.NODE_ENV === 'production') {
     const Vue = require('vue');

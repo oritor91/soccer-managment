@@ -1,36 +1,60 @@
 <template>
   <v-container>
-    <v-card>
-      <v-card-title>Games</v-card-title>
+    <v-card class="my-4">
+      <v-card-title>
+        <v-row align="center">
+          <v-col>Games</v-col>
+          <v-col class="text-right">
+            <v-btn @click="showAddGameForm" color="primary">
+              <v-icon left>mdi-plus</v-icon> Add Game
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-title>
       <v-card-text>
-        <v-btn @click="showAddGameForm" color="primary">Add Game</v-btn>
-        <v-list>
-          <v-list-item
-            v-for="game in games"
-            :key="game._id"
-            @click="selectGame(game)"
-          >
-            <v-list-item-content>
-              <v-list-item-title>{{ game.date }} - {{ game.location }}</v-list-item-title>
-              <v-list-item-subtitle>{{ game.time }}</v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-        <AddGameForm v-if="isAddGameFormVisible" @save="fetchGames" @close="isAddGameFormVisible = false" />
-        <EditGameForm
-          v-if="isEditGameFormVisible"
-          :selectedGame="selectedGame"
-          @save="fetchGames"
-          @close="closeEditForm"
-        />
+        <v-dialog v-model="isAddGameFormVisible" max-width="600px">
+          <v-card>
+            <v-card-title>Add Game</v-card-title>
+            <v-card-text>
+              <AddGameForm @save="loadGames" @close="isAddGameFormVisible = false" />
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+
+        <v-row>
+          <v-col v-for="game in games" :key="game._id" cols="12" md="6">
+            <v-card class="my-2" outlined>
+              <v-card-title>
+                <v-row>
+                  <v-col>{{ game.date }} - {{ game.location }}</v-col>
+                  <v-col class="text-right">
+                    <v-btn icon @click="selectGame(game)" color="black">
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-card-title>
+              <v-card-subtitle>{{ game.time }}</v-card-subtitle>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <v-dialog v-model="isEditGameFormVisible" max-width="600px">
+          <v-card>
+            <v-card-title>Edit Game</v-card-title>
+            <v-card-text>
+              <EditGameForm :selectedGame="selectedGame" @save="loadGames" @close="closeEditForm" />
+            </v-card-text>
+          </v-card>
+        </v-dialog>
       </v-card-text>
     </v-card>
   </v-container>
 </template>
 
 <script>
-import { ref } from 'vue';
-import axios from 'axios';
+import { ref, onMounted } from 'vue';
+import { fetchGames } from '@/api';
 import AddGameForm from './AddGameForm.vue';
 import EditGameForm from './EditGameForm.vue';
 
@@ -42,10 +66,10 @@ export default {
     const isEditGameFormVisible = ref(false);
     const selectedGame = ref(null);
 
-    const fetchGames = async () => {
+    const loadGames = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/game');
-        games.value = response.data;
+        const response = await fetchGames();
+        games.value = response;
       } catch (error) {
         console.error('Error fetching games:', error);
       }
@@ -56,7 +80,6 @@ export default {
     };
 
     const selectGame = (game) => {
-      console.log('Selected game:', game);
       selectedGame.value = game;
       isEditGameFormVisible.value = true;
     };
@@ -66,14 +89,16 @@ export default {
       selectedGame.value = null;
     };
 
-    fetchGames();
+    onMounted(() => {
+      loadGames();
+    });
 
     return {
       games,
       isAddGameFormVisible,
       isEditGameFormVisible,
       selectedGame,
-      fetchGames,
+      loadGames,
       showAddGameForm,
       selectGame,
       closeEditForm,

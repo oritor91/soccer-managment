@@ -3,7 +3,7 @@
     <v-card>
       <v-card-title>Add Player</v-card-title>
       <v-card-text>
-        <v-form @submit.prevent="addPlayer">
+        <v-form @submit.prevent="addNewPlayer">
           <v-text-field
             v-model="player.name"
             label="Name"
@@ -36,7 +36,7 @@
 
 <script>
 import { ref } from 'vue';
-import axios from 'axios';
+import { addPlayer } from '@/api';
 import { PLAYER_POSITIONS, PLAYER_SKILL_LEVEL } from '@/consts';
 
 
@@ -52,10 +52,9 @@ export default {
     const positions = ref(PLAYER_POSITIONS);
     const skillLevels = ref(PLAYER_SKILL_LEVEL);
 
-    const addPlayer = async () => {
+    const addNewPlayer = async () => {
       try {
-        await axios.post('http://localhost:8000/player', player.value);
-        emit('save');
+        await addPlayer(player);
         resetForm();
       } catch (error) {
         console.error('Error adding player:', error);
@@ -69,6 +68,7 @@ export default {
         position: '',
         skill_level: 0,
       };
+      emit("cancel");
     };
 
     const cancelForm = () => {
@@ -78,7 +78,7 @@ export default {
 
     return {
       player,
-      addPlayer,
+      addNewPlayer,
       resetForm,
       positions,
       skillLevels,

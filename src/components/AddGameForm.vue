@@ -1,9 +1,9 @@
 <template>
   <v-container>
-    <v-card>
+    <v-card class="my-4">
       <v-card-title>Add Game</v-card-title>
       <v-card-text>
-        <v-form @submit.prevent="addGame">
+        <v-form @submit.prevent="addNewGame">
           <v-text-field
             v-model="game.date"
             label="Date"
@@ -22,11 +22,14 @@
             required
           ></v-text-field>
           <v-select
+            v-model="selectedPlayerNames"
             label="Select Players"
             :items="players"
             item-title="name"
             item-value="name"
             multiple
+            chips
+            :filter="customFilter"
             @update:modelValue="updateSelectedPlayers"
           ></v-select>
           <v-btn type="submit" color="primary">Add Game</v-btn>
@@ -39,7 +42,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { fetchPlayers, addGame } from '@/api';
 
 export default {
   setup(props, { emit }) {
@@ -51,11 +54,12 @@ export default {
     });
 
     const players = ref([]);
+    const selectedPlayerNames = ref([]);
 
-    const fetchPlayers = async () => {
+    const loadPlayers = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/player');
-        players.value = response.data;
+        const response = await fetchPlayers();
+        players.value = response;
         console.log('Fetched players:', players.value);
       } catch (error) {
         console.error('Error fetching players:', error);
@@ -63,16 +67,17 @@ export default {
     };
 
     const updateSelectedPlayers = (selectedNames) => {
+      console.log('Selected names:', selectedNames); // Debugging
       // Map selected names back to full player objects
       game.value.players = selectedNames.map(name => 
         players.value.find(player => player.name === name)
       );
+      console.log('Updated game players:', game.value.players); // Debugging
     };
 
-    const addGame = async () => {
+    const addNewGame = async () => {
       try {
-        console.log(game.value)
-        await axios.post('http://localhost:8000/game', game.value);
+        await addGame(game);
         emit('save');
         closeForm();
       } catch (error) {
@@ -84,15 +89,33 @@ export default {
       emit('close');
     };
 
-    onMounted(fetchPlayers);
+    const customFilter = (item, queryText, itemText) => {
+      const text = itemText.toLowerCase();
+      const searchText = queryText.toLowerCase();
+      return text.includes(searchText);
+    };
+
+    onMounted(() => {
+      loadPlayers();
+    });
 
     return {
       game,
       players,
-      addGame,
+      selectedPlayerNames,
+      addNewGame,
+      loadPlayers,
       closeForm,
       updateSelectedPlayers,
+      customFilter,
     };
   },
 };
 </script>
+
+<style scoped>
+.v-dialog .v-card {
+  max-width: 100%;
+  width: 600px;
+}
+</style>
