@@ -36,33 +36,27 @@
 
 <script>
 import { ref, watch } from 'vue';
-import { updatePlayer } from '@/api';
+import { useStore } from 'vuex';
 import { PLAYER_POSITIONS, PLAYER_SKILL_LEVEL } from '@/consts';
 
 export default {
   props: ['player'],
   setup(props, { emit }) {
+    const store = useStore(); // Access the Vuex store
     const playerData = ref({ ...props.player });
-    const oldPlayerData = ref({ ...props.player });
     const positions = ref(PLAYER_POSITIONS);
     const skillLevels = ref(PLAYER_SKILL_LEVEL);
-
 
     watch(
       () => props.player,
       (newPlayer) => {
         playerData.value = { ...newPlayer };
-        oldPlayerData.value = { ...newPlayer };
       }
     );
 
     const updateCurrentPlayer = async () => {
       try {
-        const requestData = {
-          old: oldPlayerData.value,
-          new: playerData.value,
-        };
-        await updatePlayer(requestData);
+        await store.dispatch('updatePlayer', playerData.value); // Use Vuex action
         emit('save');
         closeForm();
       } catch (error) {

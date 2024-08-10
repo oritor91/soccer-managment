@@ -41,11 +41,13 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import { fetchPlayers, addGame } from '@/api';
+import { ref, onMounted, computed } from 'vue';
+import { useStore } from 'vuex';
 
 export default {
   setup(props, { emit }) {
+    const store = useStore(); // Access the Vuex store
+
     const game = ref({
       date: '',
       time: '',
@@ -53,31 +55,26 @@ export default {
       players: [], // This will store the full player objects
     });
 
-    const players = ref([]);
+    const players = computed(() => store.state.players); // Get players from Vuex store
     const selectedPlayerNames = ref([]);
 
     const loadPlayers = async () => {
       try {
-        const response = await fetchPlayers();
-        players.value = response;
-        console.log('Fetched players:', players.value);
+        await store.dispatch('fetchPlayers'); // Fetch players using Vuex action
       } catch (error) {
         console.error('Error fetching players:', error);
       }
     };
 
     const updateSelectedPlayers = (selectedNames) => {
-      console.log('Selected names:', selectedNames); // Debugging
-      // Map selected names back to full player objects
       game.value.players = selectedNames.map(name => 
         players.value.find(player => player.name === name)
       );
-      console.log('Updated game players:', game.value.players); // Debugging
     };
 
     const addNewGame = async () => {
       try {
-        await addGame(game);
+        await store.dispatch('addGame', game.value); // Add game using Vuex action
         emit('save');
         closeForm();
       } catch (error) {
@@ -104,7 +101,6 @@ export default {
       players,
       selectedPlayerNames,
       addNewGame,
-      loadPlayers,
       closeForm,
       updateSelectedPlayers,
       customFilter,

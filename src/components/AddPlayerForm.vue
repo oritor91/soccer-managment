@@ -36,12 +36,13 @@
 
 <script>
 import { ref } from 'vue';
-import { addPlayer } from '@/api';
+import { useStore } from 'vuex';
 import { PLAYER_POSITIONS, PLAYER_SKILL_LEVEL } from '@/consts';
-
 
 export default {
   setup(props, { emit }) {
+    const store = useStore(); // Access the Vuex store
+
     const player = ref({
       name: '',
       phone_number: '',
@@ -54,8 +55,9 @@ export default {
 
     const addNewPlayer = async () => {
       try {
-        await addPlayer(player);
-        resetForm();
+        await store.dispatch('addPlayer', player.value); // Use Vuex action
+        emit("save");
+        cancelForm();
       } catch (error) {
         console.error('Error adding player:', error);
       }
@@ -68,7 +70,6 @@ export default {
         position: '',
         skill_level: 0,
       };
-      emit("cancel");
     };
 
     const cancelForm = () => {

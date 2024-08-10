@@ -12,7 +12,7 @@
         </v-row>
       </v-card-title>
       <v-card-text>
-        <v-dialog v-model="isAddGameFormVisible" max-width="600px">
+        <v-dialog v-model="isAddGameFormVisible" max-width="600">
           <v-card>
             <v-card-title>Add Game</v-card-title>
             <v-card-text>
@@ -39,7 +39,7 @@
           </v-col>
         </v-row>
 
-        <v-dialog v-model="isEditGameFormVisible" max-width="600px">
+        <v-dialog v-model="isEditGameFormVisible" max-width="1000">
           <v-card>
             <v-card-title>Edit Game</v-card-title>
             <v-card-text>
@@ -53,23 +53,25 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import { fetchGames } from '@/api';
+import { ref, onMounted, computed } from 'vue';
+import { useStore } from 'vuex';
 import AddGameForm from './AddGameForm.vue';
 import EditGameForm from './EditGameForm.vue';
 
 export default {
   components: { AddGameForm, EditGameForm },
   setup() {
-    const games = ref([]);
+    const store = useStore(); // Access the Vuex store
+
     const isAddGameFormVisible = ref(false);
     const isEditGameFormVisible = ref(false);
     const selectedGame = ref(null);
 
+    const games = computed(() => store.state.games); // Map games state
+
     const loadGames = async () => {
       try {
-        const response = await fetchGames();
-        games.value = response;
+        await store.dispatch('fetchGames'); // Fetch games using Vuex action
       } catch (error) {
         console.error('Error fetching games:', error);
       }

@@ -12,17 +12,17 @@
         </v-row>
       </v-card-title>
       <v-card-text>
-        <v-dialog v-model="isAddPlayerFormVisible" max-width="600px">
+        <v-dialog v-model="isAddPlayerFormVisible" max-width="500">
           <v-card>
             <v-card-title>Add Player</v-card-title>
             <v-card-text>
-              <AddPlayerForm @save="loadPlayers" @cancel="isAddPlayerFormVisible = false" @close="closeEditForm" />
+              <AddPlayerForm @save="loadPlayers" @cancel="isAddPlayerFormVisible = false" />
             </v-card-text>
           </v-card>
         </v-dialog>
 
         <v-row>
-          <v-col v-for="player in players" :key="player.id" cols="12" md="6">
+          <v-col v-for="player in players" :key="player._id" cols="12" md="6">
             <v-card class="my-2" outlined>
               <v-card-title>
                 <v-row>
@@ -42,7 +42,7 @@
           </v-col>
         </v-row>
 
-        <v-dialog v-model="isEditPlayerFormVisible" max-width="600px">
+        <v-dialog v-model="isEditPlayerFormVisible" max-width="600">
           <v-card>
             <v-card-title>Edit Player</v-card-title>
             <v-card-text>
@@ -56,22 +56,27 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import { fetchPlayers, deletePlayer } from '@/api';
+import { ref, onMounted, computed } from 'vue';
+import { useStore } from 'vuex';
 import AddPlayerForm from './AddPlayerForm.vue';
 import EditPlayerForm from './EditPlayerForm.vue';
 
 export default {
   components: { AddPlayerForm, EditPlayerForm },
   setup() {
-    const players = ref([]);
     const isAddPlayerFormVisible = ref(false);
     const isEditPlayerFormVisible = ref(false);
     const currentPlayer = ref(null);
 
+    const store = useStore(); // Access the Vuex store
+
+    const players = computed(() => store.state.players); // Map state
+    const fetchPlayers = () => store.dispatch('fetchPlayers'); // Map actions
+    const deletePlayer = (player) => store.dispatch('deletePlayer', player);
+
     const loadPlayers = async () => {
       try {
-        players.value = await fetchPlayers();
+        await fetchPlayers();
       } catch (error) {
         console.error('Error loading players:', error);
       }
@@ -93,6 +98,7 @@ export default {
 
     const closeEditForm = () => {
       isEditPlayerFormVisible.value = false;
+      loadPlayers();
     };
 
     onMounted(loadPlayers);

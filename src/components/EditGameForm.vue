@@ -1,7 +1,6 @@
 <template>
   <v-container>
     <v-card class="my-4">
-      <v-card-title>Edit Game</v-card-title>
       <v-card-text>
         <v-form @submit.prevent="updateCurrentGame">
           <v-text-field
@@ -85,20 +84,22 @@
 
 <script>
 import { ref, watch, onMounted } from 'vue';
-import {updateGame, deleteGame, sortPlayersIntoGroups, saveSortedGroups, fetchPlayers} from '@/api';
+import { useStore } from 'vuex';
 
 export default {
   props: {
     selectedGame: Object,
   },
   setup(props, { emit }) {
+    const store = useStore(); // Access the Vuex store
+
     const game = ref({
       _id: '',
       date: '',
       time: '',
       location: '',
       players: [],
-      sortedGroups: {}, // Add sortedGroups to the game object
+      sortedGroups: {},
     });
 
     const players = ref([]);
@@ -107,22 +108,22 @@ export default {
 
     const loadPlayers = async () => {
       try {
-        const response = await fetchPlayers();
-        players.value = response;
+        await store.dispatch('fetchPlayers');
+        players.value = store.state.players;
       } catch (error) {
         console.error('Error fetching players:', error);
       }
     };
 
     const updateSelectedPlayers = (selectedNames) => {
-      game.value.players = selectedNames.map(name => 
+      game.value.players = selectedNames.map(name =>
         players.value.find(player => player.name === name)
       );
     };
 
     const updateCurrentGame = async () => {
       try {
-        await updateGame(game);
+        await store.dispatch('updateGame', game.value);
         emit('save');
         closeForm();
       } catch (error) {
@@ -132,8 +133,7 @@ export default {
 
     const deleteCurrentGame = async () => {
       try {
-        console.log(game);
-        await deleteGame(game);
+        await store.dispatch('deleteGame', game.value);
         emit('save');
         closeForm();
       } catch (error) {
@@ -143,9 +143,9 @@ export default {
 
     const sortGroups = async () => {
       try {
-        const response = await sortPlayersIntoGroups(game);
+        const response = await store.dispatch('sortPlayersIntoGroups', game.value);
         sortedGroups.value = response;
-        game.value.sortedGroups = response.data; // Save sortedGroups to game object
+        game.value.sortedGroups = response;
       } catch (error) {
         console.error('Failed to sort players into groups:', error);
       }
@@ -153,7 +153,10 @@ export default {
 
     const saveGroups = async () => {
       try {
-        await saveSortedGroups(game, sortedGroups);
+        await store.dispatch('saveSortedGroups', {
+          game: game.value,
+          sortedGroups: sortedGroups.value,
+        });
         emit('save');
         closeForm();
       } catch (error) {
@@ -167,7 +170,6 @@ export default {
 
     watch(() => props.selectedGame, (newGame) => {
       if (newGame) {
-        console.log('Selected game:', newGame);
         game.value = { ...newGame };
         selectedPlayers.value = newGame.players ? newGame.players.map(player => player.name) : [];
         sortedGroups.value = newGame.sorted_groups || null;
