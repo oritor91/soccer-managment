@@ -18,7 +18,7 @@
           ></v-text-field>
           <v-text-field
             v-model="game.location"
-            label="Location"
+            label="location - optional"
             required
           ></v-text-field>
           <v-select
